@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drishti — Health Chat</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, #0d1f4a 0%, transparent 50%),
+                        #000;
+        }
+        .grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: 
+                linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(20px);
+        }
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .live-dot {
+            width: 6px; height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .back-link {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #a78bfa; }
+
+        /* Chat area */
+        .chat-area {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .chat-area::-webkit-scrollbar { width: 4px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+        /* Messages */
+        .msg {
+            max-width: 75%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .msg.user {
+            background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(37,99,235,0.25));
+            border: 1px solid rgba(124,58,237,0.25);
+            align-self: flex-end;
+            color: #e5e7eb;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.ai {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            align-self: flex-start;
+            color: #d1d5db;
+            border-bottom-left-radius: 4px;
+        }
+        .ai-label {
+            font-size: 0.7rem;
+            color: #7c3aed;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Typing */
+        .typing {
+            display: none;
+            align-self: flex-start;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+        }
+        .typing span {
+            display: inline-block;
+            width: 6px; height: 6px;
+            background: #7c3aed;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.2s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+        /* Suggestions */
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-self: flex-start;
+        }
+        .suggestion-btn {
+            background: rgba(124,58,237,0.1);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: #a78bfa;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .suggestion-btn:hover { background: rgba(124,58,237,0.2); }
+
+        /* Input area */
+        .input-area {
+            position: relative;
+            z-index: 10;
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 8px 8px 8px 16px;
+            transition: border-color 0.3s;
+        }
+        .input-row:focus-within { border-color: rgba(124,58,237,0.5); }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            padding: 6px 0;
+        }
+        .chat-input::placeholder { color: #4b5563; }
+
+        /* Camera button */
+        .camera-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .camera-btn:hover { background: rgba(124,58,237,0.15); color: #a78bfa; border-color: rgba(124,58,237,0.3); }
+
+        .send-btn {
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .send-btn:hover { transform: scale(1.05); }
+
+        /* Camera modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #0d0d0d;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+        }
+        .modal-content h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .modal-content p { color: #6b7280; font-size: 0.85rem; margin-bottom: 24px; }
+        
+        #cameraPreview {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        #capturedImage {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .modal-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            color: white;
+        }
+        .modal-btn.secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #9ca3af;
+        }
+        .modal-btn:hover { transform: translateY(-1px); }
+
+        input[type="file"] { display: none; }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #374151;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="grid"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">Drishti</div>
+        <div class="header-badge">
+            <div class="live-dot"></div>
+            Health AI — Online
+        </div>
+        <a href="/" class="back-link">← Upload Report</a>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area" id="chatArea">
+        <!-- Welcome message -->
+        <div class="msg ai">
+            <div class="ai-label">✦ Drishti</div>
+            Hi! 👋 I'm Drishti, your personal health assistant.<br><br>
+            You can ask me anything about your health — symptoms, medications, diet, or general wellness. I'll give you clear, simple answers. 
+        </div>
+
+        <!-- Suggestions -->
+        <div class="suggestions">
+            <button class="suggestion-btn" onclick="askSuggestion(this)">I have a headache, what should I do?</button>
+            <button class="suggestion-btn" onclick="askSuggestion(this)">What foods are good for low hemoglobin?</button>
+            <button class="suggestion-btn" onclick="askSuggestion(this)">I feel tired all the time</button>
+            <button class="suggestion-btn" onclick="askSuggestion(this)">What is Vitamin D deficiency?</button>
+            <button class="suggestion-btn" onclick="askSuggestion(this)">How to improve blood sugar naturally?</button>
+        </div>
+
+        <div class="typing" id="typing">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+        <div class="input-row">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="chatInput"
+                placeholder="Ask anything about your health..."
+                onkeypress="if(event.key==='Enter') sendMessage()"
+            />
+            <button class="camera-btn" onclick="openCamera()" title="Upload or capture report">📷</button>
+            <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleImageUpload(this)">
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        <p class="disclaimer">⚠️ Not a substitute for professional medical advice.</p>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="modal" id="cameraModal">
+        <div class="modal-content">
+            <h3>📷 Capture or Upload Report</h3>
+            <p>Take a photo of your medical report or upload from gallery</p>
+            <video id="cameraPreview" autoplay playsinline></video>
+            <img id="capturedImage" alt="Captured report"/>
+            <div class="modal-btns" id="modalBtns">
+                <button class="modal-btn primary" onclick="startCamera()">📷 Open Camera</button>
+                <button class="modal-btn primary" onclick="document.getElementById('fileInput').click()">🖼️ Upload from Gallery</button>
+                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const typing = document.getElementById('typing');
+        let stream = null;
+        let conversationHistory = [];
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `msg ${sender}`;
+            if (sender === 'ai') {
+                div.innerHTML = `<div class="ai-label">✦ Drishti</div>${marked.parse(text)}`;
+            } else {
+                div.textContent = text;
+            }
+            chatArea.insertBefore(div, typing);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function askSuggestion(btn) {
+            document.getElementById('chatInput').value = btn.textContent;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const question = input.value.trim();
+            if (!question) return;
+
+            addMessage(question, 'user');
+            conversationHistory.push({ role: 'user', content: question });
+            input.value = '';
+
+            typing.style.display = 'block';
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            try {
+                const response = await fetch('/general-chat-api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history: conversationHistory })
+                });
+                const data = await response.json();
+                typing.style.display = 'none';
+                addMessage(data.answer, 'ai');
+                conversationHistory.push({ role: 'assistant', content: data.answer });
+            } catch (err) {
+                typing.style.display = 'none';
+                addMessage('Something went wrong, please try again!', 'ai');
+            }
+        }
+
+        // Camera functions
+        function openCamera() {
+            document.getElementById('cameraModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('cameraModal').classList.remove('active');
+            stopCamera();
+            document.getElementById('cameraPreview').style.display = 'none';
+            document.getElementById('capturedImage').style.display = 'none';
+            document.getElementById('modalBtns').innerHTML = `
+                <button class="modal-btn primary" onclick="startCamera()">📷 Open Camera</button>
+                <button class="modal-btn primary" onclick="document.getElementById('fileInput').click()">🖼️ Upload from Gallery</button>
+                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+            `;
+        }
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.getElementById('cameraPreview');
+                video.srcObject = stream;
+                video.style.display = 'block';
+                document.getElementById('modalBtns').innerHTML = `
+                    <button class="modal-btn primary" onclick="capturePhoto()">📸 Capture</button>
+                    <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+                `;
+            } catch(e) {
+                alert('Camera access denied. Please upload from gallery instead.');
+            }
+        }
+        function stopCamera() {
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        }
+        function capturePhoto() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL('image/jpeg');
+            stopCamera();
+            video.style.display = 'none';
+            const img = document.getElementById('capturedImage');
+            img.src = imageData;
+            img.style.display = 'block';
+            document.getElementById('modalBtns').innerHTML = `
+                <button class="modal-btn primary" onclick="analyzeImage('${imageData}')">🔍 Analyze This Report</button>
+                <button class="modal-btn secondary" onclick="startCamera()">🔄 Retake</button>
+                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+            `;
+        }
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                closeModal();
+                addMessage('📷 Report image uploaded — analyzing...', 'user');
+                analyzeImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+        async function analyzeImage(imageData) {
+            closeModal();
+            addMessage('📷 Analyzing your report image...', 'user');
+            typing.style.display = 'block';
+            try {
+                const response = await fetch('/analyze-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData })
+                });
+                const data = await response.json();
+                typing.style.display = 'none';
+                addMessage(data.answer, 'ai');
+            } catch(err) {
+                typing.style.display = 'none';
+                addMessage('Could not analyze image. Please try again!', 'ai');
+            }
+        }
+    </script>
+</body>
+</html>

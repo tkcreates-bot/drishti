@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drishti — Your Analysis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #000; color: white; min-height: 100vh; }
+        .bg { position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, #0d1f4a 0%, transparent 50%), #000; }
+        .grid { position: fixed; inset: 0; z-index: 0; background-image: linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px); background-size: 50px 50px; }
+
+        .container { position: relative; z-index: 10; max-width: 860px; margin: 0 auto; padding: 48px 20px 80px; }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 40px; }
+        .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(5,150,105,0.15); border: 1px solid rgba(5,150,105,0.3); padding: 6px 16px; border-radius: 50px; font-size: 0.75rem; color: #34d399; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .badge-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        h1 { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #60a5fa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+
+        /* Health Score */
+        .score-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 36px; margin-bottom: 24px; display: flex; align-items: center; gap: 32px; backdrop-filter: blur(20px); }
+        .score-circle { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+        .score-circle svg { transform: rotate(-90deg); }
+        .score-circle .track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; }
+        .score-circle .fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease; }
+        .score-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .score-num { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .score-total { font-size: 0.7rem; color: #6b7280; }
+        .score-info h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
+        .score-info p { color: #9ca3af; font-size: 0.9rem; line-height: 1.6; }
+        .score-label { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 8px; }
+        .label-excellent { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .label-good { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+        .label-fair { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+        .label-attention { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+        /* Grid layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } .score-card { flex-direction: column; text-align: center; } }
+
+        /* Cards */
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px; backdrop-filter: blur(20px); }
+        .card-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* Abnormal values */
+        .value-item { padding: 12px 14px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px; }
+        .value-item.abnormal-high { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+        .value-item.abnormal-low { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+        .value-item.normal { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); }
+        .value-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+        .value-name { font-size: 0.88rem; font-weight: 600; margin-bottom: 2px; }
+        .value-num { font-size: 0.78rem; color: #9ca3af; }
+        .value-meaning { font-size: 0.8rem; color: #9ca3af; margin-top: 4px; }
+
+        /* Key findings */
+        .finding-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; color: #d1d5db; line-height: 1.5; }
+        .finding-item:last-child { border-bottom: none; }
+        .finding-dot { width: 6px; height: 6px; background: #7c3aed; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+
+        /* Foods */
+        .food-tag { display: inline-block; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; margin: 4px; }
+        .food-tag.avoid { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
+
+        /* Action steps */
+        .action-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; color: #d1d5db; line-height: 1.5; }
+        .action-item:last-child { border-bottom: none; }
+        .action-num { width: 22px; height: 22px; background: linear-gradient(135deg, #7c3aed, #2563eb); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+
+        /* Doctor alert */
+        .doctor-alert { border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 16px; }
+        .doctor-alert.yes { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+        .doctor-alert.no { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
+        .doctor-alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .doctor-alert h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+        .doctor-alert p { font-size: 0.85rem; color: #9ca3af; }
+
+        /* Chat section */
+        .chat-section { margin-top: 32px; }
+        .chat-title { font-size: 1rem; font-weight: 600; color: #a78bfa; margin-bottom: 16px; }
+        .chat-messages { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; max-height: 360px; overflow-y: auto; padding-right: 4px; }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.88rem; line-height: 1.6; max-width: 85%; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .msg.user { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(37,99,235,0.2)); border: 1px solid rgba(124,58,237,0.2); align-self: flex-end; color: #e5e7eb; }
+        .msg.ai { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); align-self: flex-start; color: #d1d5db; }
+        .ai-label { font-size: 0.7rem; color: #7c3aed; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .typing { display: none; align-self: flex-start; padding: 12px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+        .typing span { display: inline-block; width: 6px; height: 6px; background: #7c3aed; border-radius: 50%; margin: 0 2px; animation: bounce 1.2s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+        .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .suggestion-btn { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); border-radius: 20px; padding: 6px 14px; color: #a78bfa; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+        .suggestion-btn:hover { background: rgba(124,58,237,0.2); }
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.3s; }
+        .chat-input:focus { border-color: rgba(124,58,237,0.5); }
+        .chat-input::placeholder { color: #4b5563; }
+        .send-btn { background: linear-gradient(135deg, #7c3aed, #2563eb); border: none; border-radius: 12px; padding: 14px 20px; color: white; cursor: pointer; font-size: 1.1rem; transition: all 0.3s; }
+        .send-btn:hover { transform: translateY(-2px); }
+
+        /* Back button */
+        .back-btn { display: block; width: fit-content; margin: 32px auto 0; padding: 12px 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #9ca3af; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+        .disclaimer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #374151; }
+
+        /* Sticky chat at bottom */
+.sticky-chat {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+}
+
+.sticky-chat-inner {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.chat-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 0;
+}
+
+.chat-toggle-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #a78bfa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-toggle-btn {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #a78bfa;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+
+.chat-expanded {
+    display: block;
+    padding-top: 12px;
+}
+
+/* Add padding to container so content not hidden behind sticky chat */
+.container {
+    padding-bottom: 120px !important;
+}
+
+/* Score label fixes */
+.label-needs-attention {
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+.label-fair {
+    background: rgba(245,158,11,0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245,158,11,0.3);
+}
+.label-good {
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+.label-excellent {
+    background: rgba(16,185,129,0.15);
+    color: #34d399;
+    border: 1px solid rgba(16,185,129,0.3);
+}
+    </style>
+ 
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="grid"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="badge"><div class="badge-dot"></div> Analysis Complete</div>
+            <h1>Drishti</h1>
+        </div>
+
+        {% if data.error %}
+        <div class="card" style="margin-bottom:24px;">
+            <p style="color:#9ca3af;">{{ data.raw }}</p>
+        </div>
+        {% else %}
+
+        <!-- Health Score -->
+        <div class="score-card">
+            <div class="score-circle">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                    <circle class="track" cx="60" cy="60" r="52"/>
+                    <circle class="fill" cx="60" cy="60" r="52"
+                        stroke="url(#scoreGrad)"
+                        stroke-dasharray="326.7"
+                        stroke-dashoffset="{{ 326.7 - (326.7 * data.health_score / 100) }}"
+                        id="scoreFill"/>
+                    <defs>
+                        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#7c3aed"/>
+                            <stop offset="100%" style="stop-color:#2563eb"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="score-number">
+                    <span class="score-num">{{ data.health_score }}</span>
+                    <span class="score-total">/100</span>
+                </div>
+            </div>
+            <div class="score-info">
+                <span class="score-label label-{{ data.score_label.lower().replace(' ', '-') }}">{{ data.score_label }}</span>
+                <h2>{{ data.patient_name }}'s Health Report</h2>
+                <p>{{ data.summary }}</p>
+            </div>
+        </div>
+
+        <!-- Abnormal + Normal Values -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title" style="color:#f87171;">⚠️ Needs Attention</div>
+                {% for item in data.abnormal_values %}
+                <div class="value-item {{ 'abnormal-high' if item.status == 'HIGH' else 'abnormal-low' }}">
+                    <div class="value-icon">{{ '🔴' if item.status == 'HIGH' else '🟡' }}</div>
+                    <div>
+                        <div class="value-name">{{ item.name }}</div>
+                        <div class="value-num">{{ item.value }} — {{ item.status }}</div>
+                        <div class="value-meaning">{{ item.meaning }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card">
+                <div class="card-title" style="color:#34d399;">✅ Looking Good</div>
+                {% for item in data.normal_values %}
+                <div class="value-item normal">
+                    <div class="value-icon">🟢</div>
+                    <div>
+                        <div class="value-name">{{ item.name }}</div>
+                        <div class="value-num">{{ item.value }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Key Findings + Actions -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title" style="color:#a78bfa;">🔍 Key Findings</div>
+                {% for f in data.key_findings %}
+                <div class="finding-item">
+                    <div class="finding-dot"></div>
+                    {{ f }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card">
+                <div class="card-title" style="color:#60a5fa;">📋 Action Steps</div>
+                {% for i, step in enumerate(data.action_steps) %}
+                <div class="action-item">
+                    <div class="action-num">{{ i+1 }}</div>
+                    {{ step }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Foods -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-title" style="color:#34d399;">🥗 Diet Recommendations</div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.78rem; color:#6b7280; margin-bottom:8px;">EAT MORE</div>
+                {% for f in data.foods_to_eat %}
+                <span class="food-tag">✓ {{ f }}</span>
+                {% endfor %}
+            </div>
+            <div>
+                <div style="font-size:0.78rem; color:#6b7280; margin-bottom:8px;">AVOID</div>
+                {% for f in data.foods_to_avoid %}
+                <span class="food-tag avoid">✗ {{ f }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Doctor Alert -->
+        <div class="doctor-alert {{ 'yes' if data.see_doctor else 'no' }}">
+            <div class="doctor-alert-icon">{{ '🏥' if data.see_doctor else '✅' }}</div>
+            <div>
+                <h3>{{ 'See a Doctor' if data.see_doctor else 'No Immediate Doctor Visit Needed' }}</h3>
+                <p>{{ data.doctor_reason }}</p>
+            </div>
+        </div>
+
+        <!-- Chat -->
+        <div class="chat-section">
+            <div class="chat-title">🧬 Ask Drishti about your report</div>
+            <div class="suggestions">
+                <button class="suggestion-btn" onclick="askSuggestion(this)">What should I eat?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Is this serious?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Should I see a doctor?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Explain in simple words</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="msg ai">
+                    <div class="ai-label">✦ Drishti</div>
+                    Hi! 👋 I've analyzed your report. Ask me anything about your results!
+                </div>
+            </div>
+            <div class="typing" id="typing"><span></span><span></span><span></span></div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask anything about your report..." onkeypress="if(event.key==='Enter') sendMessage()"/>
+                <button class="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+
+        {% endif %}
+
+        <a href="/" class="back-btn">← Analyze Another Report</a>
+        <p class="disclaimer">⚠️ Drishti is not a substitute for professional medical advice.</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script>
+        const reportContext = `{{ data | tojson }}`;
+        const chatMessages = document.getElementById('chatMessages');
+        const typing = document.getElementById('typing');
+
+        function askSuggestion(btn) {
+            document.getElementById('chatInput').value = btn.textContent;
+            sendMessage();
+        }
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `msg ${sender}`;
+            if (sender === 'ai') {
+                div.innerHTML = `<div class="ai-label">✦ Drishti</div>${marked.parse(text)}`;
+            } else {
+                div.textContent = text;
+            }
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const question = input.value.trim();
+            if (!question) return;
+            addMessage(question, 'user');
+            input.value = '';
+            typing.style.display = 'block';
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, context: reportContext })
+                });
+                const data = await response.json();
+                typing.style.display = 'none';
+                addMessage(data.answer, 'ai');
+            } catch(err) {
+                typing.style.display = 'none';
+                addMessage('Something went wrong, please try again!', 'ai');
+            }
+        }
+    </script>
+    <!-- Sticky Chat Box -->
+<div class="sticky-chat" id="stickyChat">
+    <div class="sticky-chat-inner">
+        <div class="chat-toggle">
+    <div class="chat-toggle-title">
+        🧬 Ask Drishti about your report
+    </div>
+</div> 
+
+        <div class="chat-expanded" id="chatExpanded">
+            <div class="suggestions" style="margin-bottom:10px;">
+                <button class="suggestion-btn" onclick="askSuggestion(this)">What should I eat?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Is this serious?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Should I see a doctor?</button>
+                <button class="suggestion-btn" onclick="askSuggestion(this)">Explain in simple words</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages" style="max-height:220px;">
+                <div class="msg ai">
+                    <div class="ai-label">✦ Drishti</div>
+                    Hi! 👋 I've analyzed your report. Ask me anything!
+                </div>
+            </div>
+
+            <div class="typing" id="typing"><span></span><span></span><span></span></div>
+
+            <div class="chat-input-area" style="margin-top:10px;">
+                <input type="text" class="chat-input" id="chatInput"
+                    placeholder="Ask anything about your report..."
+                    onkeypress="if(event.key==='Enter') sendMessage()"/>
+                <button class="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script>
+    const reportContext = `{{ data | tojson }}`;
+    const chatMessages = document.getElementById('chatMessages');
+    const typing = document.getElementById('typing');
+    let chatOpen = false;
+
+
+    function askSuggestion(btn) {
+        
+        document.getElementById('chatInput').value = btn.textContent;
+        sendMessage();
+    }
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `msg ${sender}`;
+        if (sender === 'ai') {
+            div.innerHTML = `<div class="ai-label">✦ Drishti</div>${marked.parse(text)}`;
+        } else {
+            div.textContent = text;
+        }
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const question = input.value.trim();
+        if (!question) return;
+        addMessage(question, 'user');
+        input.value = '';
+        typing.style.display = 'block';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, context: reportContext })
+            });
+            const data = await response.json();
+            typing.style.display = 'none';
+            addMessage(data.answer, 'ai');
+        } catch(err) {
+            typing.style.display = 'none';
+            addMessage('Something went wrong, please try again!', 'ai');
+        }
+    }
+</script>
+</body>
+</html>

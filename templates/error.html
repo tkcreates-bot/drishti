@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drishti — Oops!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .bg {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, #1a0533 0%, #000 70%);
+        }
+        .content { position: relative; z-index: 10; }
+        .emoji { font-size: 5rem; margin-bottom: 24px; display: block; animation: bounce 1s ease infinite; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p { color: #6b7280; margin-bottom: 32px; font-size: 0.95rem; line-height: 1.6; }
+        p span { color: #a78bfa; }
+        .btn {
+            display: inline-block;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            border-radius: 12px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    </style>
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="content">
+        <span class="emoji">🧬</span>
+        <h1>Hold on, no report found!</h1>
+        <p>Looks like you forgot to upload your medical report.<br>
+        <span>Drop a PDF</span> and let Drishti do the magic ✦</p>
+        <a href="/" class="btn">Go Back & Upload ✦</a>
+    </div>
+</body>
+</html>
