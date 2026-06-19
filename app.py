@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.jinja_env.globals.update(enumerate=enumerate)
 
-client = Groq(api_key="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")
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @app.route("/")
 def home():
