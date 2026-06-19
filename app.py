@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import fitz
-import os
 import json
 from groq import Groq
+import os
 
+ from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.jinja_env.globals.update(enumerate=enumerate)
