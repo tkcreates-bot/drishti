@@ -4,7 +4,7 @@ import json
 from groq import Groq
 import os
 
- from dotenv import load_dotenv
+from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
