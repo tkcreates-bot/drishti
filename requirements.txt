@@ -2,3 +2,4 @@ flask
 pymupdf
 groq
 python-dotenv
+gunicorn

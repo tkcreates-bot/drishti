@@ -187,6 +187,25 @@
     color: #34d399;
     border: 1px solid rgba(16,185,129,0.3);
 }
+
+.lang-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: #6b7280;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+.lang-btn:hover { border-color: rgba(124,58,237,0.4); color: #a78bfa; }
+.lang-btn.active {
+    background: rgba(124,58,237,0.2);
+    border-color: rgba(124,58,237,0.5);
+    color: #a78bfa;
+    font-weight: 600;
+}
     </style>
  
 </head>
@@ -390,10 +409,18 @@
 <div class="sticky-chat" id="stickyChat">
     <div class="sticky-chat-inner">
         <div class="chat-toggle">
-    <div class="chat-toggle-title">
-        🧬 Ask Drishti about your report
+    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+        <div class="chat-toggle-title">🧬 Ask Drishti about your report</div>
+        <div style="display:flex; gap:4px;">
+            <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
+            <button class="lang-btn" onclick="setLang('hi', this)">हि</button>
+            <button class="lang-btn" onclick="setLang('pa', this)">ਪੰ</button>
+            <button class="lang-btn" onclick="setLang('bn', this)">বাং</button>
+            <button class="lang-btn" onclick="setLang('te', this)">తె</button>
+            <button class="lang-btn" onclick="setLang('ta', this)">தமி</button>
+        </div>
     </div>
-</div> 
+</div>
 
         <div class="chat-expanded" id="chatExpanded">
             <div class="suggestions" style="margin-bottom:10px;">
@@ -427,6 +454,23 @@
     const reportContext = `{{ data | tojson }}`;
     const chatMessages = document.getElementById('chatMessages');
     const typing = document.getElementById('typing');
+
+    let currentLang = 'en';
+const langNames = {
+    'en': 'English',
+    'hi': 'Hindi',
+    'pa': 'Punjabi',
+    'bn': 'Bengali',
+    'te': 'Telugu',
+    'ta': 'Tamil'
+};
+
+function setLang(lang, btn) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    addMessage(`Switched to ${langNames[lang]}! Ask me anything.`, 'ai');
+}
     let chatOpen = false;
 
 
@@ -460,7 +504,11 @@
             const response = await fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, context: reportContext })
+                body: JSON.stringify({ 
+    question, 
+    context: reportContext,
+    language_name: langNames[currentLang]
+})
             });
             const data = await response.json();
             typing.style.display = 'none';

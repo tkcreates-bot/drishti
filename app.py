@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 import fitz
+import os
 import json
 from groq import Groq
-import os
-
 from dotenv import load_dotenv
+
 load_dotenv()
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.jinja_env.globals.update(enumerate=enumerate)
@@ -79,6 +80,7 @@ def chat():
     data = request.get_json()
     question = data.get("question")
     context = data.get("context")
+    language_name = data.get("language_name", "English")
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -88,13 +90,20 @@ def chat():
 User's report data:
 {context}
 
+IMPORTANT: Respond ONLY in {language_name}.
+If Hindi, use Devanagari script.
+If Punjabi, use Gurmukhi script.
+If Bengali, use Bengali script.
+If Telugu, use Telugu script.
+If Tamil, use Tamil script.
+If English, use simple clear English.
+
 Rules:
-- Answer in simple, clear English only
 - Be specific and helpful
-- Mention Indian healthcare options like Practo, Apollo 24/7 when relevant
 - Use bullet points for clarity
 - Never diagnose — explain and guide only
-- Be warm and reassuring"""},
+- Be warm and reassuring
+- Mention Indian healthcare options like Practo, Apollo 24/7 when relevant"""},
             {"role": "user", "content": question}
         ]
     )
